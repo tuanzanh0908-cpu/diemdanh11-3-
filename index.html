@@ -221,9 +221,9 @@
                     <a href="#"><i class="fab fa-twitter"></i></a>
                     <a href="#"><i class="fab fa-linkedin-in"></i></a>
                 </div>
-                <input type="text" placeholder="Full Name" required />
-                <input type="email" placeholder="Email" required />
-                <input type="password" placeholder="Password" required />
+                <input type="text" placeholder="Full Name" />
+                <input type="email" id="regEmail" placeholder="Email" required />
+                <input type="password" id="regPass" placeholder="Password" required />
                 <button type="submit" class="main-btn">Sign Up</button>
             </form>
         </div>
@@ -236,8 +236,8 @@
                     <a href="#"><i class="fab fa-twitter"></i></a>
                     <a href="#"><i class="fab fa-linkedin-in"></i></a>
                 </div>
-                <input type="email" placeholder="Email" required />
-                <input type="password" placeholder="Password" required />
+                <input type="email" id="loginEmail" placeholder="Email" required />
+                <input type="password" id="loginPass" placeholder="Password" required />
                 <button type="submit" class="main-btn">Login</button>
             </form>
         </div>
@@ -258,37 +258,66 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        // 1. Import các hàm cần thiết từ Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // 2. Cấu hình Firebase của bạn
+        const firebaseConfig = {
+            apiKey: "AIzaSyDlX-enfqdnmhvh84uoaxcp7u07_6cwbQA",
+            authDomain: "diemdanh-d4deb.firebaseapp.com",
+            projectId: "diemdanh-d4deb",
+            storageBucket: "diemdanh-d4deb.firebasestorage.app",
+            messagingSenderId: "884475205099",
+            appId: "1:884475205099:web:3146096e53f1256fcf75ae",
+            measurementId: "G-6GR6G76LX8"
+        };
+
+        // 3. Khởi tạo Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // 4. Các hiệu ứng chuyển đổi giao diện
         const signUpBtn = document.getElementById('signUp');
         const signInBtn = document.getElementById('signIn');
         const container = document.getElementById('container');
 
-        // Logic chuyển hiệu ứng Slide
-        signUpBtn.addEventListener('click', () => {
-            container.classList.add("active");
-        });
+        signUpBtn.addEventListener('click', () => container.classList.add("active"));
+        signInBtn.addEventListener('click', () => container.classList.remove("active"));
 
-        signInBtn.addEventListener('click', () => {
-            container.classList.remove("active");
-        });
-
-        // --- CODE CHUYỂN TRANG MỚI THÊM Ở ĐÂY ---
-
-        const signInForm = document.getElementById('signInForm');
+        // 5. Xử lý ĐĂNG KÝ (Sign Up)
         const signUpForm = document.getElementById('signUpForm');
-
-        // Khi nhấn nút Login
-        signInForm.addEventListener('submit', (e) => {
-            e.preventDefault(); // Ngăn trang load lại theo mặc định
-            alert("Đang đăng nhập... chuẩn bị chuyển trang!");
-            window.location.href = "home.html"; // THAY ĐỔI LINK CỦA BẠN TẠI ĐÂY
-        });
-
-        // Khi nhấn nút Sign Up
         signUpForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            alert("Đăng ký thành công!");
-            window.location.href = "./home.html"; // THAY ĐỔI LINK CỦA BẠN TẠI ĐÂY
+            const email = document.getElementById('regEmail').value;
+            const pass = document.getElementById('regPass').value;
+
+            createUserWithEmailAndPassword(auth, email, pass)
+                .then((userCredential) => {
+                    alert("Đăng ký thành công tài khoản: " + email);
+                    container.classList.remove("active"); // Chuyển sang khung Login
+                })
+                .catch((error) => {
+                    alert("Lỗi đăng ký: " + error.message);
+                });
+        });
+
+        // 6. Xử lý ĐĂNG NHẬP (Sign In)
+        const signInForm = document.getElementById('signInForm');
+        signInForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPass').value;
+
+            signInWithEmailAndPassword(auth, email, pass)
+                .then((userCredential) => {
+                    alert("Đăng nhập thành công!");
+                    window.location.href = "home.html"; // Chuyển trang
+                })
+                .catch((error) => {
+                    alert("Sai tài khoản hoặc mật khẩu!");
+                });
         });
     </script>
 </body>
