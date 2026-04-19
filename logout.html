@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng xuất</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #111;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .logout-card {
+            width: 350px;
+            background: #1a1a1a;
+            padding: 40px 20px;
+            border-radius: 20px;
+            text-align: center;
+            border: 1px solid #333;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+        }
+
+        .icon-warning {
+            font-size: 50px;
+            margin-bottom: 15px;
+            color: #ff4757;
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+        }
+
+        p {
+            color: #888;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .btn-confirm {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 12px 0;
+            width: 100%;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-bottom: 15px;
+        }
+
+        .btn-confirm:hover {
+            background: #ff6b81;
+            transform: translateY(-2px);
+        }
+
+        .btn-cancel {
+            background: transparent;
+            color: #888;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+
+        .btn-cancel:hover {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="logout-card">
+    <div class="icon-warning">🚪</div>
+    <h2>Đăng xuất?</h2>
+    <p>Bạn có chắc chắn muốn thoát khỏi hệ thống quản lý điểm danh không?</p>
+    
+    <button class="btn-confirm" onclick="window.location.href='index.html'">Đăng xuất ngay</button>
+    
+    <br>
+    <button class="btn-cancel" onclick="window.history.back()">Quay lại, tôi muốn ở lại</button>
+</div>
+
+</body>
+</html>
