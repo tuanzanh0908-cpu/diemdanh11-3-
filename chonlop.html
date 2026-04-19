@@ -12,9 +12,16 @@
         .dashboard { width: 95%; max-width: 1000px; margin-top: 30px; padding-bottom: 50px; }
         .card { background: var(--card-bg); border-radius: 20px; padding: 25px; border: 1px solid #333; margin-bottom: 25px; }
         h3 { margin-top: 0; color: var(--light-purple); display: flex; align-items: center; gap: 10px; font-size: 18px; }
-        .class-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
-        .class-item { background: #252525; border: 1px solid #444; padding: 8px 18px; border-radius: 10px; cursor: pointer; transition: 0.3s; font-weight: bold; }
-        .class-item:hover { background: var(--primary-purple); color: white; }
+        
+        /* CSS cho danh sách lớp và nút xóa lớp */
+        .class-list { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 15px; }
+        .class-badge-wrapper { display: flex; align-items: center; background: #252525; border: 1px solid #444; border-radius: 10px; overflow: hidden; transition: 0.3s; }
+        .class-badge-wrapper:hover { border-color: var(--light-purple); transform: translateY(-2px); }
+        .class-name-btn { padding: 8px 15px; cursor: pointer; font-weight: bold; color: #ccc; border: none; background: transparent; }
+        .class-name-btn:hover { color: white; background: rgba(94, 67, 243, 0.2); }
+        .btn-del-class { background: #331111; color: #ff4757; border: none; padding: 8px 10px; cursor: pointer; font-size: 14px; border-left: 1px solid #444; }
+        .btn-del-class:hover { background: #ff4757; color: white; }
+
         .input-group { display: flex; gap: 12px; margin-top: 15px; flex-wrap: wrap; }
         input { flex: 1; padding: 12px; background: #222; border: 1px solid #444; border-radius: 12px; color: white; outline: none; }
         .btn-main { background: var(--primary-purple); color: white; border: none; padding: 12px 25px; border-radius: 12px; font-weight: bold; cursor: pointer; }
@@ -37,18 +44,19 @@
     <div class="card">
         <h3>🏫 Truy cập lớp học</h3>
         <div class="input-group">
-            <input type="text" id="classInput" placeholder="Nhập tên lớp (VD: 12A1)">
-            <button class="btn-main" id="btnSelect">Truy Cập</button>
+            <input type="text" id="classInput" placeholder="Nhập tên lớp mới (VD: 11A2)">
+            <button class="btn-main" id="btnSelect">Truy Cập / Tạo</button>
         </div>
-        <div style="margin-top: 20px;">
-            <p style="font-size: 13px; color: var(--text-gray);">Lớp đã tạo:</p>
-            <div id="available-classes" class="class-list"></div>
+        <div style="margin-top: 25px;">
+            <p style="font-size: 13px; color: var(--text-gray); margin-bottom: 10px;">Lớp đã tạo (Bấm vào tên để chọn, ✖ để xóa):</p>
+            <div id="available-classes" class="class-list">
+                </div>
         </div>
     </div>
 
     <div id="main-management" style="display: none;">
         <div class="card">
-            <h3>👤 Thêm Học Sinh - Lớp <span id="label-class" style="color: var(--light-purple); margin-left: 5px;"></span></h3>
+            <h3>👤 Quản lý học sinh - Lớp <span id="label-class" style="color: var(--light-purple); font-weight: bold;"></span></h3>
             <div class="input-group">
                 <input type="text" id="stuName" placeholder="Họ và tên">
                 <input type="text" id="cardId" placeholder="Mã thẻ RFID">
@@ -57,19 +65,21 @@
         </div>
 
         <div class="card">
-            <h3>📋 Điểm Danh Realtime (<span id="current-date"></span>)</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Mã Thẻ</th>
-                        <th>Họ Tên</th>
-                        <th>Trạng Thái</th>
-                        <th>Giờ Đến</th>
-                        <th>Xóa</th>
-                    </tr>
-                </thead>
-                <tbody id="studentTable"></tbody>
-            </table>
+            <h3>📋 Danh sách điểm danh (<span id="current-date"></span>)</h3>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã Thẻ</th>
+                            <th>Họ Tên</th>
+                            <th>Trạng Thái</th>
+                            <th>Giờ Đến</th>
+                            <th>Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentTable"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -78,7 +88,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // CONFIG CHUẨN CỦA BẠN
     const firebaseConfig = {
         apiKey: "AIzaSyDlX-enfqdnmhvh84uoaxcp7u07_6cwbQA",
         authDomain: "diemdanh-d4deb.firebaseapp.com",
@@ -95,26 +104,47 @@
     const today = new Date().toISOString().slice(0, 10);
     document.getElementById('current-date').innerText = new Date().toLocaleDateString('vi-VN');
 
-    // Tải danh sách lớp
+    // 1. Tải danh sách lớp kèm nút xóa
     onValue(ref(db, 'LopHoc'), (snapshot) => {
         const container = document.getElementById('available-classes');
         container.innerHTML = "";
         const data = snapshot.val();
         if (data) {
             Object.keys(data).forEach(name => {
-                const span = document.createElement('span');
-                span.className = 'class-item';
-                span.innerText = name;
-                span.onclick = () => { document.getElementById('classInput').value = name; selectClass(); };
-                container.appendChild(span);
+                const wrapper = document.createElement('div');
+                wrapper.className = 'class-badge-wrapper';
+                wrapper.innerHTML = `
+                    <button class="class-name-btn">${name}</button>
+                    <button class="btn-del-class" title="Xóa lớp">✖</button>
+                `;
+                
+                // Sự kiện chọn lớp
+                wrapper.querySelector('.class-name-btn').onclick = () => {
+                    document.getElementById('classInput').value = name;
+                    selectClass();
+                };
+
+                // Sự kiện xóa lớp
+                wrapper.querySelector('.btn-del-class').onclick = (e) => {
+                    e.stopPropagation(); // Ngăn sự kiện bấm vào nút xóa bị nhảy vào chọn lớp
+                    if(confirm(`CẢNH BÁO: Bạn có chắc chắn muốn xóa toàn bộ lớp ${name}? Dữ liệu học sinh và điểm danh sẽ mất hết.`)) {
+                        remove(ref(db, `LopHoc/${name}`));
+                        if(currentClass === name) {
+                            document.getElementById('main-management').style.display = 'none';
+                            currentClass = "";
+                        }
+                    }
+                };
+                
+                container.appendChild(wrapper);
             });
         }
     });
 
-    // Hàm chọn lớp
+    // 2. Hàm chọn lớp
     function selectClass() {
         const val = document.getElementById('classInput').value.trim().toUpperCase();
-        if(!val) return alert("Chưa nhập tên lớp!");
+        if(!val) return alert("Vui lòng nhập hoặc chọn lớp!");
         currentClass = val;
         document.getElementById('label-class').innerText = currentClass;
         document.getElementById('main-management').style.display = 'block';
@@ -122,7 +152,7 @@
     }
     document.getElementById('btnSelect').onclick = selectClass;
 
-    // Tải dữ liệu học sinh
+    // 3. Tải dữ liệu học sinh & điểm danh
     function loadData() {
         onValue(ref(db, `LopHoc/${currentClass}/DanhSachHocSinh`), (snapshot) => {
             const students = snapshot.val() || {};
@@ -142,20 +172,27 @@
                 <tr>
                     <td><code>${id}</code></td>
                     <td>${students[id].HoTen}</td>
-                    <td><span class="badge ${isPresent ? 'bg-present' : 'bg-absent'}">${isPresent ? 'CÓ MẶT' : 'VẮNG'}</span></td>
+                    <td><span class="badge ${isPresent ? 'bg-present' : 'bg-absent'}">${isPresent ? 'ĐÃ ĐẾN' : 'VẮNG'}</span></td>
                     <td>${isPresent ? attendance[id] : "--:--"}</td>
                     <td><button class="btn-delete" onclick="window.delStu('${id}')">Xóa</button></td>
                 </tr>`;
         }
     }
 
+    // 4. Các nút chức năng
     document.getElementById('btnAddStu').onclick = function() {
         const name = document.getElementById('stuName').value.trim();
         const id = document.getElementById('cardId').value.trim();
-        if(name && id) set(ref(db, `LopHoc/${currentClass}/DanhSachHocSinh/${id}`), { HoTen: name });
+        if(name && id) {
+            set(ref(db, `LopHoc/${currentClass}/DanhSachHocSinh/${id}`), { HoTen: name });
+            document.getElementById('stuName').value = "";
+            document.getElementById('cardId').value = "";
+        }
     };
 
-    window.delStu = (id) => { if(confirm("Xóa học sinh?")) remove(ref(db, `LopHoc/${currentClass}/DanhSachHocSinh/${id}`)); };
+    window.delStu = (id) => { 
+        if(confirm("Xóa học sinh này khỏi lớp?")) remove(ref(db, `LopHoc/${currentClass}/DanhSachHocSinh/${id}`)); 
+    };
 </script>
 </body>
 </html>
