@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Lý Lớp Học - Purple Theme</title>
+    <style>
+        :root {
+            --primary-purple: #6c5ce7;
+            --light-purple: #a29bfe;
+            --dark-purple: #4834d4;
+            --bg-color: #f0f0ff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 1000px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(108, 92, 231, 0.15);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary-purple), var(--dark-purple));
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .content { padding: 30px; }
+
+        .section-card {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            transition: 0.3s;
+        }
+
+        .section-card:hover { border-color: var(--light-purple); }
+
+        h3 { color: var(--dark-purple); margin-top: 0; display: flex; align-items: center; gap: 10px; }
+
+        /* Input styling */
+        .input-group { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+
+        input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            outline: none;
+            transition: 0.3s;
+            min-width: 200px;
+        }
+
+        input:focus { border-color: var(--primary-purple); }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-main { background-color: var(--primary-purple); color: white; }
+        .btn-main:hover { background-color: var(--dark-purple); transform: translateY(-2px); }
+
+        .btn-delete { background-color: #ff7675; color: white; padding: 8px 15px; }
+
+        /* Table Styling */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #f8f9ff; color: var(--dark-purple); padding: 15px; text-align: left; }
+        td { padding: 15px; border-bottom: 1px solid #eee; }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        .bg-present { background: #dff9fb; color: #0984e3; }
+        .bg-absent { background: #ffeaa7; color: #d63031; }
+
+        .class-selector { margin-bottom: 30px; text-align: center; }
+        select { padding: 10px; border-radius: 8px; border: 2px solid var(--light-purple); width: 200px; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="header">
+        <h1>Quản Lý Lớp Học & Điểm Danh</h1>
+        <p id="current-date"></p>
+    </div>
+
+    <div class="content">
+        <div class="class-selector">
+            <h3>🏫 Chọn Lớp Quản Lý</h3>
+            <div class="input-group">
+                <input type="text" id="classInput" placeholder="Tên lớp (VD: 12A1, 10B...)">
+                <button class="btn-main" onclick="selectClass()">Truy Cập Lớp</button>
+            </div>
+            <p style="color: #666; font-size: 0.9em; margin-top: 10px;">
+                Nhập tên lớp để tạo mới hoặc truy cập dữ liệu cũ.
+            </p>
+        </div>
+
+        <div id="main-management" style="display: none;">
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
+
+            <div class="section-card">
+                <h3>👤 Thêm Học Sinh Vào Lớp <span id="label-class" style="color: var(--primary-purple);"></span></h3>
+                <div class="input-group">
+                    <input type="text" id="stuName" placeholder="Họ và tên học sinh">
+                    <input type="text" id="cardId" placeholder="Mã thẻ RFID (UID)">
+                    <button class="btn-main" onclick="addStudent()">+ Thêm</button>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <h3>📋 Danh Sách & Điểm Danh Realtime</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã Thẻ</th>
+                            <th>Họ Tên</th>
+                            <th>Trạng Thái</th>
+                            <th>Giờ Đến</th>
+                            <th>Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentTable">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    // --- CẤU HÌNH FIREBASE CỦA BẠN ---
+    const firebaseConfig = {
+        apiKey: "AIzaSy...", 
+        databaseURL: "https://diemdanh-d4deb-default-rtdb.asia-southeast1.firebasedatabase.app/",
+        projectId: "diemdanh-d4deb",
+        appId: "1:884475205099:web:..."
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    let currentClass = "";
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById('current-date').innerText = "Ngày: " + today;
+
+    // CHỨC NĂNG 1: CHỌN LỚP
+    window.selectClass = function() {
+        const val = document.getElementById('classInput').value.trim();
+        if(!val) return alert("Vui lòng nhập tên lớp!");
+        
+        currentClass = val;
+        document.getElementById('label-class').innerText = currentClass;
+        document.getElementById('main-management').style.display = 'block';
+        loadData();
+    }
+
+    // CHỨC NĂNG 2: THÊM HỌC SINH
+    window.addStudent = function() {
+        const name = document.getElementById('stuName').value.trim();
+        const id = document.getElementById('cardId').value.trim();
+        
+        if(name && id) {
+            set(ref(db, `LopHoc/${currentClass}/DanhSachHocSinh/${id}`), { HoTen: name })
+            .then(() => {
+                document.getElementById('stuName').value = "";
+                document.getElementById('cardId').value = "";
+            });
+        }
+    }
+
+    // CHỨC NĂNG 3: XÓA HỌC SINH
+    window.deleteStudent = function(id) {
+        if(confirm("Xóa học sinh này khỏi lớp?")) {
+            remove(ref(db, `LopHoc/${currentClass}/DanhSachHocSinh/${id}`));
+        }
+    }
+
+    // CHỨC NĂNG 4: TẢI DỮ LIỆU REALTIME
+    function loadData() {
+        const stuRef = ref(db, `LopHoc/${currentClass}/DanhSachHocSinh`);
+        const attRef = ref(db, `LopHoc/${currentClass}/DiemDanh/${today}`);
+
+        onValue(stuRef, (snapshot) => {
+            const students = snapshot.val() || {};
+            onValue(attRef, (attSnapshot) => {
+                const attendance = attSnapshot.val() || {};
+                renderUI(students, attendance);
+            });
+        });
+    }
+
+    function renderUI(students, attendance) {
+        const tbody = document.getElementById('studentTable');
+        tbody.innerHTML = "";
+
+        for (let id in students) {
+            const isPresent = attendance[id];
+            const time = isPresent ? attendance[id] : "--:--";
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${id}</strong></td>
+                    <td>${students[id].HoTen}</td>
+                    <td>
+                        <span class="badge ${isPresent ? 'bg-present' : 'bg-absent'}">
+                            ${isPresent ? '● Đã có mặt' : '○ Vắng mặt'}
+                        </span>
+                    </td>
+                    <td>${time}</td>
+                    <td>
+                        <button class="btn-delete" onclick="deleteStudent('${id}')">Xóa</button>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+</script>
+</body>
+</html>
+
