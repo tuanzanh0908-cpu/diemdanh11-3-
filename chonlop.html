@@ -17,8 +17,35 @@
             background-color: var(--bg-color);
             margin: 0;
             display: flex;
-            justify-content: center;
-            padding: 40px 20px;
+            flex-direction: column; /* Đổi thành column để top-bar nằm trên */
+            align-items: center;
+            padding-bottom: 40px;
+        }
+
+        /* --- CSS NÚT QUAY LẠI --- */
+        .top-bar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 15px 30px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+            box-sizing: border-box;
+        }
+
+        .btn-back-home {
+            text-decoration: none;
+            color: #a29bfe;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: 0.3s;
+        }
+
+        .btn-back-home:hover {
+            color: white;
+            transform: translateX(-5px);
         }
 
         .dashboard {
@@ -28,6 +55,7 @@
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(108, 92, 231, 0.15);
             overflow: hidden;
+            margin-top: 30px;
         }
 
         /* Header */
@@ -54,7 +82,6 @@
 
         h3 { color: var(--dark-purple); margin-top: 0; display: flex; align-items: center; gap: 10px; }
 
-        /* Input styling */
         .input-group { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
 
         input {
@@ -98,10 +125,15 @@
         .bg-absent { background: #ffeaa7; color: #d63031; }
 
         .class-selector { margin-bottom: 30px; text-align: center; }
-        select { padding: 10px; border-radius: 8px; border: 2px solid var(--light-purple); width: 200px; }
     </style>
 </head>
 <body>
+
+<div class="top-bar">
+    <a href="home.html" class="btn-back-home">
+        ⬅ Quay lại trang chính
+    </a>
+</div>
 
 <div class="dashboard">
     <div class="header">
@@ -116,9 +148,6 @@
                 <input type="text" id="classInput" placeholder="Tên lớp (VD: 12A1, 10B...)">
                 <button class="btn-main" onclick="selectClass()">Truy Cập Lớp</button>
             </div>
-            <p style="color: #666; font-size: 0.9em; margin-top: 10px;">
-                Nhập tên lớp để tạo mới hoặc truy cập dữ liệu cũ.
-            </p>
         </div>
 
         <div id="main-management" style="display: none;">
@@ -145,8 +174,7 @@
                             <th>Thao Tác</th>
                         </tr>
                     </thead>
-                    <tbody id="studentTable">
-                        </tbody>
+                    <tbody id="studentTable"></tbody>
                 </table>
             </div>
         </div>
@@ -157,7 +185,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // --- CẤU HÌNH FIREBASE CỦA BẠN ---
     const firebaseConfig = {
         apiKey: "AIzaSy...", 
         databaseURL: "https://diemdanh-d4deb-default-rtdb.asia-southeast1.firebasedatabase.app/",
@@ -172,7 +199,6 @@
     const today = new Date().toISOString().slice(0, 10);
     document.getElementById('current-date').innerText = "Ngày: " + today;
 
-    // CHỨC NĂNG 1: CHỌN LỚP
     window.selectClass = function() {
         const val = document.getElementById('classInput').value.trim();
         if(!val) return alert("Vui lòng nhập tên lớp!");
@@ -181,56 +207,11 @@
         document.getElementById('label-class').innerText = currentClass;
         document.getElementById('main-management').style.display = 'block';
         loadData();
-        <style>
-    /* ... (giữ nguyên các CSS cũ) ... */
-
-    .top-bar {
-        display: flex;
-        align-items: center;
-        padding: 15px 30px;
-        background: #1a1a1a;
-        border-bottom: 1px solid #333;
     }
 
-    .btn-back-home {
-        text-decoration: none;
-        color: #a29bfe;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        transition: 0.3s;
-    }
-
-    .btn-back-home:hover {
-        color: white;
-        transform: translateX(-5px);
-    }
-</style>
-
-<body>
-
-<div class="top-bar">
-    <a href="home.html" class="btn-back-home">
-        ⬅ Quay lại trang chính
-    </a>
-</div>
-
-<div class="dashboard">
-    <div class="header">
-        <h1>Quản Lý Lớp Học & Điểm Danh</h1>
-        <p id="current-date"></p>
-    </div>
-    
-    </div>
-        
-    }
-
-    // CHỨC NĂNG 2: THÊM HỌC SINH
     window.addStudent = function() {
         const name = document.getElementById('stuName').value.trim();
         const id = document.getElementById('cardId').value.trim();
-        
         if(name && id) {
             set(ref(db, `LopHoc/${currentClass}/DanhSachHocSinh/${id}`), { HoTen: name })
             .then(() => {
@@ -240,14 +221,12 @@
         }
     }
 
-    // CHỨC NĂNG 3: XÓA HỌC SINH
     window.deleteStudent = function(id) {
         if(confirm("Xóa học sinh này khỏi lớp?")) {
             remove(ref(db, `LopHoc/${currentClass}/DanhSachHocSinh/${id}`));
         }
     }
 
-    // CHỨC NĂNG 4: TẢI DỮ LIỆU REALTIME
     function loadData() {
         const stuRef = ref(db, `LopHoc/${currentClass}/DanhSachHocSinh`);
         const attRef = ref(db, `LopHoc/${currentClass}/DiemDanh/${today}`);
@@ -264,11 +243,9 @@
     function renderUI(students, attendance) {
         const tbody = document.getElementById('studentTable');
         tbody.innerHTML = "";
-
         for (let id in students) {
             const isPresent = attendance[id];
             const time = isPresent ? attendance[id] : "--:--";
-            
             tbody.innerHTML += `
                 <tr>
                     <td><strong>${id}</strong></td>
@@ -279,9 +256,7 @@
                         </span>
                     </td>
                     <td>${time}</td>
-                    <td>
-                        <button class="btn-delete" onclick="deleteStudent('${id}')">Xóa</button>
-                    </td>
+                    <td><button class="btn-delete" onclick="deleteStudent('${id}')">Xóa</button></td>
                 </tr>
             `;
         }
@@ -289,4 +264,3 @@
 </script>
 </body>
 </html>
-
