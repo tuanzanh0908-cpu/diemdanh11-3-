@@ -181,6 +181,49 @@
         document.getElementById('label-class').innerText = currentClass;
         document.getElementById('main-management').style.display = 'block';
         loadData();
+        <style>
+    /* ... (giữ nguyên các CSS cũ) ... */
+
+    .top-bar {
+        display: flex;
+        align-items: center;
+        padding: 15px 30px;
+        background: #1a1a1a;
+        border-bottom: 1px solid #333;
+    }
+
+    .btn-back-home {
+        text-decoration: none;
+        color: #a29bfe;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: 0.3s;
+    }
+
+    .btn-back-home:hover {
+        color: white;
+        transform: translateX(-5px);
+    }
+</style>
+
+<body>
+
+<div class="top-bar">
+    <a href="home.html" class="btn-back-home">
+        ⬅ Quay lại trang chính
+    </a>
+</div>
+
+<div class="dashboard">
+    <div class="header">
+        <h1>Quản Lý Lớp Học & Điểm Danh</h1>
+        <p id="current-date"></p>
+    </div>
+    
+    </div>
+        
     }
 
     // CHỨC NĂNG 2: THÊM HỌC SINH
