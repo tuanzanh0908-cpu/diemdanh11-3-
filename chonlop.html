@@ -193,6 +193,21 @@
     window.delStu = (id) => { 
         if(confirm("Xóa học sinh này khỏi lớp?")) remove(ref(db, `LopHoc/${currentClass}/DanhSachHocSinh/${id}`)); 
     };
+<button onclick="resetAttendance()" style="background-color: #ff4d4d; color: white;">🔄 Reset điểm danh hôm nay</button>
+    function resetAttendance() {
+    if (confirm("Bạn có chắc chắn muốn xóa toàn bộ dữ liệu điểm danh của ngày hôm nay không?")) {
+        const today = new Date().toISOString().slice(0, 10);
+        // Đường dẫn đến ngày hôm nay: LopHoc/Tên_Lớp/DiemDanh/YYYY-MM-DD
+        const resetRef = ref(db, `LopHoc/${currentClass}/DiemDanh/${today}`);
+        
+        remove(resetRef).then(() => {
+            alert("Đã reset thành công!");
+            // Web sẽ tự cập nhật nhờ hàm onValue đã viết trước đó
+        }).catch((error) => {
+            console.error("Lỗi khi reset:", error);
+        });
+    }
+}
 </script>
 </body>
 </html>
