@@ -13,7 +13,6 @@
         .card { background: var(--card-bg); border-radius: 20px; padding: 25px; border: 1px solid #333; margin-bottom: 25px; }
         h3 { margin-top: 0; color: var(--light-purple); display: flex; align-items: center; gap: 10px; font-size: 18px; }
         
-        /* CSS cho danh sách lớp và nút xóa lớp */
         .class-list { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 15px; }
         .class-badge-wrapper { display: flex; align-items: center; background: #252525; border: 1px solid #444; border-radius: 10px; overflow: hidden; transition: 0.3s; }
         .class-badge-wrapper:hover { border-color: var(--light-purple); transform: translateY(-2px); }
@@ -32,6 +31,10 @@
         .bg-present { background: rgba(0, 255, 136, 0.1); color: #00ff88; }
         .bg-absent { background: rgba(255, 71, 87, 0.1); color: #ff4757; }
         .btn-delete { background: transparent; color: #ff4757; border: 1px solid #ff4757; padding: 5px 10px; border-radius: 8px; cursor: pointer; }
+        
+        /* CSS cho nút Reset mới */
+        .btn-reset { background: rgba(255, 71, 87, 0.1); color: #ff4757; border: 1px solid #ff4757; padding: 8px 15px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.3s; }
+        .btn-reset:hover { background: #ff4757; color: white; }
     </style>
 </head>
 <body>
@@ -49,8 +52,7 @@
         </div>
         <div style="margin-top: 25px;">
             <p style="font-size: 13px; color: var(--text-gray); margin-bottom: 10px;">Lớp đã tạo (Bấm vào tên để chọn, ✖ để xóa):</p>
-            <div id="available-classes" class="class-list">
-                </div>
+            <div id="available-classes" class="class-list"></div>
         </div>
     </div>
 
@@ -65,7 +67,10 @@
         </div>
 
         <div class="card">
-            <h3>📋 Danh sách điểm danh (<span id="current-date"></span>)</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                <h3 style="margin: 0;">📋 Danh sách điểm danh (<span id="current-date"></span>)</h3>
+                <button id="btnReset" class="btn-reset">🔄 Reset hôm nay</button>
+            </div>
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
@@ -118,15 +123,13 @@
                     <button class="btn-del-class" title="Xóa lớp">✖</button>
                 `;
                 
-                // Sự kiện chọn lớp
                 wrapper.querySelector('.class-name-btn').onclick = () => {
                     document.getElementById('classInput').value = name;
                     selectClass();
                 };
 
-                // Sự kiện xóa lớp
                 wrapper.querySelector('.btn-del-class').onclick = (e) => {
-                    e.stopPropagation(); // Ngăn sự kiện bấm vào nút xóa bị nhảy vào chọn lớp
+                    e.stopPropagation();
                     if(confirm(`CẢNH BÁO: Bạn có chắc chắn muốn xóa toàn bộ lớp ${name}? Dữ liệu học sinh và điểm danh sẽ mất hết.`)) {
                         remove(ref(db, `LopHoc/${name}`));
                         if(currentClass === name) {
@@ -135,7 +138,6 @@
                         }
                     }
                 };
-                
                 container.appendChild(wrapper);
             });
         }
@@ -193,21 +195,19 @@
     window.delStu = (id) => { 
         if(confirm("Xóa học sinh này khỏi lớp?")) remove(ref(db, `LopHoc/${currentClass}/DanhSachHocSinh/${id}`)); 
     };
-<button onclick="resetAttendance()" style="background-color: #ff4d4d; color: white;">🔄 Reset điểm danh hôm nay</button>
-    function resetAttendance() {
-    if (confirm("Bạn có chắc chắn muốn xóa toàn bộ dữ liệu điểm danh của ngày hôm nay không?")) {
-        const today = new Date().toISOString().slice(0, 10);
-        // Đường dẫn đến ngày hôm nay: LopHoc/Tên_Lớp/DiemDanh/YYYY-MM-DD
-        const resetRef = ref(db, `LopHoc/${currentClass}/DiemDanh/${today}`);
-        
-        remove(resetRef).then(() => {
-            alert("Đã reset thành công!");
-            // Web sẽ tự cập nhật nhờ hàm onValue đã viết trước đó
-        }).catch((error) => {
-            console.error("Lỗi khi reset:", error);
-        });
-    }
-}
+
+    // 5. Hàm Reset điểm danh hôm nay (MỚI THÊM)
+    document.getElementById('btnReset').onclick = function() {
+        if (!currentClass) return;
+        if (confirm(`Bạn có chắc muốn RESET toàn bộ trạng thái điểm danh ngày hôm nay của lớp ${currentClass}? Tất cả sẽ trở về trạng thái VẮNG.`)) {
+            const resetRef = ref(db, `LopHoc/${currentClass}/DiemDanh/${today}`);
+            remove(resetRef).then(() => {
+                alert("Đã reset thành công!");
+            }).catch((err) => {
+                alert("Lỗi: " + err.message);
+            });
+        }
+    };
 </script>
 </body>
 </html>
