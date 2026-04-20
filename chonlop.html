@@ -24,6 +24,11 @@
         .input-group { display: flex; gap: 12px; margin-top: 15px; flex-wrap: wrap; }
         input { flex: 1; padding: 12px; background: #222; border: 1px solid #444; border-radius: 12px; color: white; outline: none; }
         .btn-main { background: var(--primary-purple); color: white; border: none; padding: 12px 25px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        
+        /* CSS cho nút Reset */
+        .btn-reset { background: rgba(255, 71, 87, 0.1); color: #ff4757; border: 1px solid #ff4757; padding: 8px 15px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 13px; }
+        .btn-reset:hover { background: #ff4757; color: white; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th { text-align: left; padding: 15px; color: var(--text-gray); border-bottom: 2px solid #333; }
         td { padding: 15px; border-bottom: 1px solid #222; }
@@ -31,10 +36,6 @@
         .bg-present { background: rgba(0, 255, 136, 0.1); color: #00ff88; }
         .bg-absent { background: rgba(255, 71, 87, 0.1); color: #ff4757; }
         .btn-delete { background: transparent; color: #ff4757; border: 1px solid #ff4757; padding: 5px 10px; border-radius: 8px; cursor: pointer; }
-        
-        /* CSS cho nút Reset mới */
-        .btn-reset { background: rgba(255, 71, 87, 0.1); color: #ff4757; border: 1px solid #ff4757; padding: 8px 15px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.3s; }
-        .btn-reset:hover { background: #ff4757; color: white; }
     </style>
 </head>
 <body>
@@ -67,11 +68,12 @@
         </div>
 
         <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <h3 style="margin: 0;">📋 Danh sách điểm danh (<span id="current-date"></span>)</h3>
-                <button id="btnReset" class="btn-reset">🔄 Reset hôm nay</button>
+                <button class="btn-reset" id="btnReset">🔄 Reset hôm nay</button>
             </div>
-            <div style="overflow-x: auto;">
+            
+            <div style="overflow-x: auto; margin-top: 15px;">
                 <table>
                     <thead>
                         <tr>
@@ -129,7 +131,7 @@
                 };
 
                 wrapper.querySelector('.btn-del-class').onclick = (e) => {
-                    e.stopPropagation();
+                    e.stopPropagation(); 
                     if(confirm(`CẢNH BÁO: Bạn có chắc chắn muốn xóa toàn bộ lớp ${name}? Dữ liệu học sinh và điểm danh sẽ mất hết.`)) {
                         remove(ref(db, `LopHoc/${name}`));
                         if(currentClass === name) {
@@ -158,6 +160,7 @@
     function loadData() {
         onValue(ref(db, `LopHoc/${currentClass}/DanhSachHocSinh`), (snapshot) => {
             const students = snapshot.val() || {};
+            // Lắng nghe nhánh điểm danh của ngày hôm nay
             onValue(ref(db, `LopHoc/${currentClass}/DiemDanh/${today}`), (attSnapshot) => {
                 const attendance = attSnapshot.val() || {};
                 renderUI(students, attendance);
@@ -181,7 +184,7 @@
         }
     }
 
-    // 4. Các nút chức năng
+    // 4. Nút Thêm học sinh
     document.getElementById('btnAddStu').onclick = function() {
         const name = document.getElementById('stuName').value.trim();
         const id = document.getElementById('cardId').value.trim();
@@ -189,24 +192,33 @@
             set(ref(db, `LopHoc/${currentClass}/DanhSachHocSinh/${id}`), { HoTen: name });
             document.getElementById('stuName').value = "";
             document.getElementById('cardId').value = "";
+        } else {
+            alert("Vui lòng nhập đủ Tên và Mã thẻ!");
+        }
+    };
+
+    // 5. Hàm Reset điểm danh (Phần bạn yêu cầu)
+    document.getElementById('btnReset').onclick = function() {
+        if(!currentClass) return;
+        
+        const confirmReset = confirm(`Bạn có chắc chắn muốn RESET toàn bộ điểm danh ngày hôm nay của lớp ${currentClass} không?\nTất cả học sinh sẽ trở về trạng thái VẮNG.`);
+        
+        if(confirmReset) {
+            // Xóa nhánh dữ liệu điểm danh của ngày hôm nay trên Firebase
+            const attendanceRef = ref(db, `LopHoc/${currentClass}/DiemDanh/${today}`);
+            remove(attendanceRef)
+                .then(() => {
+                    alert("Đã reset danh sách thành công!");
+                })
+                .catch((error) => {
+                    console.error("Lỗi khi reset:", error);
+                    alert("Có lỗi xảy ra khi xóa dữ liệu.");
+                });
         }
     };
 
     window.delStu = (id) => { 
         if(confirm("Xóa học sinh này khỏi lớp?")) remove(ref(db, `LopHoc/${currentClass}/DanhSachHocSinh/${id}`)); 
-    };
-
-    // 5. Hàm Reset điểm danh hôm nay (MỚI THÊM)
-    document.getElementById('btnReset').onclick = function() {
-        if (!currentClass) return;
-        if (confirm(`Bạn có chắc muốn RESET toàn bộ trạng thái điểm danh ngày hôm nay của lớp ${currentClass}? Tất cả sẽ trở về trạng thái VẮNG.`)) {
-            const resetRef = ref(db, `LopHoc/${currentClass}/DiemDanh/${today}`);
-            remove(resetRef).then(() => {
-                alert("Đã reset thành công!");
-            }).catch((err) => {
-                alert("Lỗi: " + err.message);
-            });
-        }
     };
 </script>
 </body>
