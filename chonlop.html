@@ -69,7 +69,7 @@
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <h3 style="margin: 0;">📋 Danh sách điểm danh (<span id="current-date"></span>)</h3>
-                <button class="btn-reset" id="btnReset">🔄 Reset hôm nay</button>
+                <button class="btn-reset" id="btnReset">🔄 Reset dữ liệu máy quét</button>
             </div>
             
             <div style="overflow-x: auto; margin-top: 15px;">
@@ -101,13 +101,15 @@
         projectId: "diemdanh-d4deb",
         storageBucket: "diemdanh-d4deb.firebasestorage.app",
         messagingSenderId: "884475205099",
-        appId: "1:884475205099:web:0bb2b6b14d323972cf75ae"
+        appId: "1:884475205099:web:0bb2b6b14d323972cf75ae",
+        measurementId: "G-6FWDQ9DKDZ"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     let currentClass = "";
-    const today = new Date().toISOString().slice(0, 10);
+    
+    // Hiển thị ngày hiện tại
     document.getElementById('current-date').innerText = new Date().toLocaleDateString('vi-VN');
 
     // 1. Lắng nghe toàn bộ danh sách lớp
@@ -144,7 +146,7 @@
         }
     });
 
-    // 2. Hàm chọn lớp (ĐÃ SỬA LỖI TẠO MỚI)
+    // 2. Hàm chọn lớp
     async function selectClass() {
         const val = document.getElementById('classInput').value.trim().toUpperCase();
         if(!val) return alert("Vui lòng nhập tên lớp!");
@@ -156,7 +158,6 @@
         document.getElementById('label-class').innerText = currentClass;
 
         try {
-            // Tạo một node "TrangThai" để xác nhận lớp tồn tại trên DB
             await update(ref(db, `LopHoc/${currentClass}`), {
                 LastActive: new Date().toISOString()
             });
@@ -170,11 +171,14 @@
     }
     document.getElementById('btnSelect').onclick = selectClass;
 
-    // 3. Tải dữ liệu
+    // 3. Tải dữ liệu (ĐÃ SỬA ĐỂ KHỚP VỚI ESP32)
     function loadData() {
+        // Đọc danh sách học sinh của lớp hiện tại
         onValue(ref(db, `LopHoc/${currentClass}/DanhSachHocSinh`), (snapshot) => {
             const students = snapshot.val() || {};
-            onValue(ref(db, `LopHoc/${currentClass}/DiemDanh/${today}`), (attSnapshot) => {
+            
+            // Đọc trạng thái điểm danh trực tiếp từ thư mục DiemDanh mà ESP32 gửi lên
+            onValue(ref(db, `DiemDanh`), (attSnapshot) => {
                 const attendance = attSnapshot.val() || {};
                 renderUI(students, attendance);
             });
@@ -185,7 +189,8 @@
         const tbody = document.getElementById('studentTable');
         tbody.innerHTML = "";
         for (let id in students) {
-            const isPresent = attendance[id];
+            // Kiểm tra xem mã UID này có nằm trong thư mục DiemDanh không
+            const isPresent = attendance[id]; 
             tbody.innerHTML += `
                 <tr>
                     <td><code>${id}</code></td>
@@ -208,14 +213,15 @@
         }
     };
 
-    // 5. Reset điểm danh
+    // 5. Reset điểm danh (ĐÃ SỬA ĐỂ XÓA DỮ LIỆU TỪ MÁY QUÉT)
     document.getElementById('btnReset').onclick = function() {
         if(!currentClass) return;
-        if(confirm(`Reset điểm danh ngày hôm nay của lớp ${currentClass}?`)) {
-            remove(ref(db, `LopHoc/${currentClass}/DiemDanh/${today}`));
+        if(confirm(`Bạn có chắc muốn xóa toàn bộ dữ liệu quét thẻ trên máy để bắt đầu ca mới?`)) {
+            remove(ref(db, `DiemDanh`));
         }
     };
 
+    // 6. Xóa học sinh
     window.delStu = (id) => { 
         if(confirm("Xóa học sinh này?")) remove(ref(db, `LopHoc/${currentClass}/DanhSachHocSinh/${id}`)); 
     };
